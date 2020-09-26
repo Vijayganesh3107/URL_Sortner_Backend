@@ -14,7 +14,7 @@ eveentemitter.on("email-trigger", (req, res) => {
     service: "gmail",
     auth: {
       user: "vijay.ganeshp95@gmail.com",
-      pass: "Chennai@7",
+      pass: process.env.MAILPASS,
     },
   });
   var mailoptions = {
@@ -22,7 +22,7 @@ eveentemitter.on("email-trigger", (req, res) => {
     to: `vijay.ganeshp95@gmail.com`,
     subject: `Secret Mail from nodejs`,
     html: `<div>Please click the below link to activate your account.This link will be valid for 24hrs only
-            <a href="https://practical-liskov-b17bff.netlify.app/">http://localhost:3000/users/auth/</a></div>`,
+            <a href="https://urlshortner-assignment.netlify.app/auth.html">http://localhost:3000/users/auth/</a></div>`,
   };
   transporter.sendMail(mailoptions, (err, info) => {
     if (err) {
