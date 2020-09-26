@@ -45,7 +45,7 @@ const { json } = require("body-parser");
 const { count } = require("console");
 
 app.get("/", (req, res) => {
-  res.render("index");
+  res.send("Hello World");
 });
 
 //API For Inserting data to the table
