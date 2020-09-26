@@ -144,7 +144,7 @@ app.post("/users/register", async (req, res) => {
     var insertres = await db.collection("registeredusers").insertOne(req.body);
     var token = jwt.sign({ email: req.body.email }, process.env.JWT_SECRET);
 
-    eveentemitter.emit("email-trigger");
+    // eveentemitter.emit("email-trigger");
     client.close();
     res.json({
       message: `User registered and a mail has been sent to ${req.body.email} and activate the account`,
