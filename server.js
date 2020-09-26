@@ -22,7 +22,7 @@ eveentemitter.on("email-trigger", (req, res) => {
     to: `vijay.ganeshp95@gmail.com`,
     subject: `Secret Mail from nodejs`,
     html: `<div>Please click the below link to activate your account.This link will be valid for 24hrs only
-            <a href="http://127.0.0.1:5500/auth.html">http://localhost:3000/users/auth/</a></div>`,
+            <a href="https://practical-liskov-b17bff.netlify.app/">http://localhost:3000/users/auth/</a></div>`,
   };
   transporter.sendMail(mailoptions, (err, info) => {
     if (err) {
@@ -39,10 +39,14 @@ const mongodb = require("mongodb");
 const bodyparser = require("body-parser");
 app.use(bodyparser.json());
 const mongoclient = mongodb.MongoClient;
-const url = "mongodb://localhost:27017";
+const url = process.env.DB_ATLAS;
 const shortid = require("shortid"); /*For generating the unique short id*/
 const { json } = require("body-parser");
 const { count } = require("console");
+
+app.get("/", (req, res) => {
+  res.send("Hello World");
+});
 
 //API For Inserting data to the table
 app.post("/longURL", async (req, res) => {
@@ -140,7 +144,7 @@ app.post("/users/register", async (req, res) => {
     var insertres = await db.collection("registeredusers").insertOne(req.body);
     var token = jwt.sign({ email: req.body.email }, process.env.JWT_SECRET);
 
-    // eveentemitter.emit("email-trigger");
+    eveentemitter.emit("email-trigger");
     client.close();
     res.json({
       message: `User registered and a mail has been sent to ${req.body.email} and activate the account`,
@@ -272,4 +276,5 @@ app.put("/user/changepassword", async (req, res) => {
   }
 });
 
-app.listen(3000);
+var port = process.env.PORT || 3000;
+app.listen(port);
