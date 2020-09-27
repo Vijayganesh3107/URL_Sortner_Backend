@@ -22,7 +22,7 @@ eveentemitter.on("email-trigger", (req, res) => {
     to: `vijay.ganeshp95@gmail.com`,
     subject: `Secret Mail from nodejs`,
     html: `<div>Please click the below link to activate your account.This link will be valid for 24hrs only
-            <a href="https://urlshortner-assignment.netlify.app/auth.html">http://localhost:3000/users/auth/</a></div>`,
+            <a href="http://127.0.0.1:5500/auth.html">http://localhost:3000/users/auth/</a></div>`,
   };
   transporter.sendMail(mailoptions, (err, info) => {
     if (err) {
@@ -32,6 +32,56 @@ eveentemitter.on("email-trigger", (req, res) => {
     }
   });
 });
+
+eveentemitter.on("ResetPasswordemail-trigger", (req, res) => {
+  var transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: "vijay.ganeshp95@gmail.com",
+      pass: process.env.MAILPASS,
+    },
+  });
+  var mailoptions = {
+    from: `vijay.ganeshp95@gmail.com`,
+    to: `vijay.ganeshp95@gmail.com`,
+    subject: `Secret Mail from nodejs`,
+    html: `<div>Please click the below link to activate your account.This link will be valid for 24hrs only
+              <a href="https://urlshortner-assignment.netlify.app/validationforforgetpassword.html">http://localhost:3000/user/forgetpasswordauth/${req.body.email}/${token}</a></div>`,
+  };
+  transporter.sendMail(mailoptions, (err, info) => {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log("email sent" + info.response);
+    }
+  });
+});
+
+// eveentemitter.on("email-trigger", (req, res) => {
+//   console.log("Hello");
+//   var transporter1 = nodemailer.createTransport({
+//     service: "gmail",
+//     host: "smtp.gmail.com",
+//     auth: {
+//       user: "vijay.ganeshp95@gmail.com",
+//       pass: "Chennai@7",
+//     },
+//   });
+//   var mailoptions = {
+//     from: `vijay.ganeshp95@gmail.com`,
+//     to: `lalitha.panch67@gmail.com`,
+//     subject: `Secret Mail from nodejs`,
+//     html: `<div>Please click the below link to activate your account.This link will be valid for 24hrs only
+//             <a href="https://urlshortner-assignment.netlify.app/auth.html">http://localhost:3000/users/auth/${req.body.email}</a></div>`,
+//   };
+//   transporter1.sendMail(mailoptions, (err, info) => {
+//     if (err) {
+//       console.log(err);
+//     } else {
+//       console.log("email sent" + info.response);
+//     }
+//   });
+// });
 
 app.use(cors());
 
@@ -43,6 +93,8 @@ const url = process.env.DB_ATLAS;
 const shortid = require("shortid"); /*For generating the unique short id*/
 const { json } = require("body-parser");
 const { count } = require("console");
+const { response } = require("express");
+const { decode } = require("querystring");
 
 app.get("/", (req, res) => {
   res.send("Hello World");
@@ -144,7 +196,8 @@ app.post("/users/register", async (req, res) => {
     var insertres = await db.collection("registeredusers").insertOne(req.body);
     var token = jwt.sign({ email: req.body.email }, process.env.JWT_SECRET);
 
-    // eveentemitter.emit("email-trigger");
+    eveentemitter.emit("email-trigger");
+
     client.close();
     res.json({
       message: `User registered and a mail has been sent to ${req.body.email} and activate the account`,
@@ -236,11 +289,22 @@ app.post("/user/forgotpassword", async (req, res) => {
   var data = await db
     .collection("registeredusers")
     .findOne({ email: req.body.email });
+  // console.log(data);
   if (data && data.activated == true) {
+    var temp_token = jwt.sign(
+      { email: req.body.email },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1h",
+      }
+    );
+
     client.close();
+    // eveentemitter.emit("ResetPasswordemail-trigger");
     res.json({
       message: "User Present",
       email: req.body.email,
+      token: temp_token,
     });
   } else {
     client.close();
@@ -275,6 +339,40 @@ app.put("/user/changepassword", async (req, res) => {
     });
   }
 });
+
+app.post(
+  "/user/forgetpasswordauth/:email",
+  forgetpasswordauthorize,
+  async (req, res) => {
+    res.json({
+      message: "Authenicated",
+    });
+  }
+);
+
+function forgetpasswordauthorize(req, res, next) {
+  if (req.headers.authorization) {
+    jwt.verify(
+      req.headers.authorization,
+      process.env.JWT_SECRET,
+      (err, decode) => {
+        if (decode) {
+          if (req.params.email == decode.email) {
+            next();
+          } else {
+            res.json({
+              message: "Inavlid token",
+            });
+          }
+        }
+      }
+    );
+  } else {
+    res.json({
+      message: "Token not available",
+    });
+  }
+}
 
 var port = process.env.PORT || 3000;
 app.listen(port);
