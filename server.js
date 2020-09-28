@@ -57,32 +57,6 @@ eveentemitter.on("ResetPasswordemail-trigger", (req, res) => {
   });
 });
 
-// eveentemitter.on("email-trigger", (req, res) => {
-//   console.log("Hello");
-//   var transporter1 = nodemailer.createTransport({
-//     service: "gmail",
-//     host: "smtp.gmail.com",
-//     auth: {
-//       user: "vijay.ganeshp95@gmail.com",
-//       pass: "Chennai@7",
-//     },
-//   });
-//   var mailoptions = {
-//     from: `vijay.ganeshp95@gmail.com`,
-//     to: `lalitha.panch67@gmail.com`,
-//     subject: `Secret Mail from nodejs`,
-//     html: `<div>Please click the below link to activate your account.This link will be valid for 24hrs only
-//             <a href="https://urlshortner-assignment.netlify.app/auth.html">http://localhost:3000/users/auth/${req.body.email}</a></div>`,
-//   };
-//   transporter1.sendMail(mailoptions, (err, info) => {
-//     if (err) {
-//       console.log(err);
-//     } else {
-//       console.log("email sent" + info.response);
-//     }
-//   });
-// });
-
 app.use(cors());
 
 const mongodb = require("mongodb");
