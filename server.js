@@ -9,69 +9,8 @@ require("dotenv").config();
 const nodemailer = require("nodemailer");
 const eventtrigger = require("events");
 var eveentemitter = new eventtrigger();
-eveentemitter.on("email-trigger", (req, res) => {
-  var transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: "vijay.ganeshp95@gmail.com",
-      pass: process.env.MAILPASS,
-    },
-  });
-  var mailoptions = {
-    from: `vijay.ganeshp95@gmail.com`,
-    to: `vijay.ganeshp95@gmail.com`,
-    subject: `Secret Mail from nodejs`,
-    html: `<div>Please click the below link to activate your account.This link will be valid for 24hrs only
-            <a href="http://127.0.0.1:5500/auth.html">http://localhost:3000/users/auth/</a></div>`,
-  };
-  transporter.sendMail(mailoptions, (err, info) => {
-    if (err) {
-      console.log(err);
-    } else {
-      console.log("email sent" + info.response);
-    }
-  });
-});
 
-eveentemitter.on("ResetPasswordemail-trigger", (req, res) => {
-  var transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: "vijay.ganeshp95@gmail.com",
-      pass: process.env.MAILPASS,
-    },
-  });
-  var mailoptions = {
-    from: `vijay.ganeshp95@gmail.com`,
-    to: `vijay.ganeshp95@gmail.com`,
-    subject: `Secret Mail from nodejs`,
-    html: `<div>Please click the below link to activate your account.This link will be valid for 24hrs only
-              <a href="https://urlshortner-assignment.netlify.app/validationforforgetpassword.html">http://localhost:3000/user/forgetpasswordauth/${req.body.email}/${token}</a></div>`,
-  };
-  transporter.sendMail(mailoptions, (err, info) => {
-    if (err) {
-      console.log(err);
-    } else {
-      console.log("email sent" + info.response);
-    }
-  });
-});
-
-const corsOpts = {
-  origin: '*',
-
-  methods: [
-    'GET',
-    'POST',
-    'PUT'
-  ],
-
-  allowedHeaders: [
-    'Content-Type',
-  ],
-};
-
-app.use(cors(corsOpts));
+app.use(cors());
 
 const mongodb = require("mongodb");
 const bodyparser = require("body-parser");
@@ -81,15 +20,13 @@ const url = process.env.DB_ATLAS;
 const shortid = require("shortid"); /*For generating the unique short id*/
 const { json } = require("body-parser");
 const { count } = require("console");
-const { response } = require("express");
-const { decode } = require("querystring");
 
 app.get("/", (req, res) => {
   res.send("Hello World");
 });
 
 //API For Inserting data to the table
-app.post("/longURL", async (req, res) => {
+app.post("/longURL", AuthorizeLogin, async (req, res) => {
   try {
     var client = await mongoclient.connect(url, { useUnifiedTopology: true });
     var db = client.db("assignment");
@@ -120,7 +57,7 @@ app.post("/longURL", async (req, res) => {
 });
 
 //API to update the no of clicks
-app.put("/longURL", async (req, res) => {
+app.put("/longURL", AuthorizeLogin, async (req, res) => {
   var client = await mongoclient.connect(url, { useUnifiedTopology: true });
   var db = client.db("assignment");
   var result = await db
@@ -148,7 +85,7 @@ app.put("/longURL", async (req, res) => {
 });
 
 //API for displaying the data and Filtering by email
-app.post("/getlongURL", async (req, res) => {
+app.post("/getlongURL", AuthorizeLogin, async (req, res) => {
   try {
     var client = await mongoclient.connect(url, { useUnifiedTopology: true });
     var db = client.db("assignment");
@@ -183,9 +120,32 @@ app.post("/users/register", async (req, res) => {
     req.body.activated = false;
     var insertres = await db.collection("registeredusers").insertOne(req.body);
     var token = jwt.sign({ email: req.body.email }, process.env.JWT_SECRET);
+    let e_mail = req.body.email;
+    eveentemitter.on("email-trigger", (req, res) => {
+      var transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: "vijay.ganeshp95@gmail.com",
+          pass: process.env.MAILPASS,
+        },
+      });
+      var mailoptions = {
+        from: `vijay.ganeshp95@gmail.com`,
+        to: `vijay.ganeshp95@gmail.com`,
+        subject: `Secret Mail from nodejs`,
+        html: `<div>Please click the below link to activate your account.This link will be valid for 24hrs only
+                <a href="https://urlshortner-backend-assignment.herokuapp.com/users/auth/${e_mail}">http://localhost:3000/users/auth/</a></div>`,
+      };
+      transporter.sendMail(mailoptions, (err, info) => {
+        if (err) {
+          console.log(err);
+        } else {
+          console.log("email sent" + info.response);
+        }
+      });
+    });
 
     eveentemitter.emit("email-trigger");
-
     client.close();
     res.json({
       message: `User registered and a mail has been sent to ${req.body.email} and activate the account`,
@@ -203,6 +163,7 @@ app.put("/users/auth/:email", authorize, async (req, res) => {
     .find({ $and: [{ email: req.params.email }, { activated: true }] })
     .count();
   if (checkdata == 1) {
+    console.log("hi");
     res.json({
       message: "User already activated",
     });
@@ -224,6 +185,7 @@ function authorize(req, res, next) {
       process.env.JWT_SECRET,
       (err, decode) => {
         if (decode) {
+          console.log(decode.email);
           if (req.params.email == decode.email) next();
           else {
             res.json({
@@ -254,9 +216,15 @@ app.post("/login", async (req, res) => {
   if (data && data.activated == true) {
     var output = await bcrypt.compare(req.body.password, data.password);
     if (output) {
+      var loginToken = jwt.sign(
+        { email: req.body.email },
+        process.env.JWT_SECRET,
+        { expiresIn: 600 }
+      );
       res.json({
         message: "success",
         email: req.body.email,
+        token: loginToken,
       });
     } else {
       res.json({
@@ -277,22 +245,37 @@ app.post("/user/forgotpassword", async (req, res) => {
   var data = await db
     .collection("registeredusers")
     .findOne({ email: req.body.email });
-  // console.log(data);
+  let e_mail = req.body.email;
   if (data && data.activated == true) {
-    var temp_token = jwt.sign(
-      { email: req.body.email },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "1h",
-      }
-    );
+    eveentemitter.on("forgot-password-mail", (req, res) => {
+      var transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: "vijay.ganeshp95@gmail.com",
+          pass: process.env.MAILPASS,
+        },
+      });
+      var mailoptions = {
+        from: `vijay.ganeshp95@gmail.com`,
+        to: `vijay.ganeshp95@gmail.com`,
+        subject: `Secret Mail from nodejs`,
+        html: `<div>Please click the below link to activate your account.This link will be valid for 24hrs only
+                <a href="https://urlshortner-backend-assignment.herokuapp.com/users/changepassword/${e_mail}">http://localhost:3000/users/auth/</a></div>`,
+      };
+      transporter.sendMail(mailoptions, (err, info) => {
+        if (err) {
+          console.log(err);
+        } else {
+          console.log("email sent" + info.response);
+        }
+      });
+    });
 
+    eveentemitter.emit("forgot-password-mail");
     client.close();
-    // eveentemitter.emit("ResetPasswordemail-trigger");
     res.json({
       message: "User Present",
       email: req.body.email,
-      token: temp_token,
     });
   } else {
     client.close();
@@ -328,39 +311,57 @@ app.put("/user/changepassword", async (req, res) => {
   }
 });
 
-app.post(
-  "/user/forgetpasswordauth/:email",
-  forgetpasswordauthorize,
-  async (req, res) => {
-    res.json({
-      message: "Authenicated",
-    });
-  }
-);
-
-function forgetpasswordauthorize(req, res, next) {
+function AuthorizeLogin(req, res, next) {
   if (req.headers.authorization) {
     jwt.verify(
       req.headers.authorization,
       process.env.JWT_SECRET,
       (err, decode) => {
         if (decode) {
-          if (req.params.email == decode.email) {
-            next();
-          } else {
+          if (req.body.email == decode.email) next();
+          else {
             res.json({
-              message: "Inavlid token",
+              message: "Not Authorized",
             });
           }
+        } else {
+          res.json({
+            message: "Session Expired Please Login Again",
+          });
         }
       }
     );
   } else {
     res.json({
-      message: "Token not available",
+      message: "Token not present",
     });
   }
 }
+
+app.put("/user/changepassword/:email", async (req, res) => {
+  var client = await mongoclient.connect(url, { useUnifiedTopology: true });
+  var db = client.db("assignment");
+  var data = await db
+    .collection("registeredusers")
+    .findOne({ email: req.params.email });
+  if (data && data.activated == true) {
+    var salt = await bcrypt.genSalt(10);
+    var hashdedpass = await bcrypt.hash(req.body.password, salt);
+    var updateddata = await db
+      .collection("registeredusers")
+      .updateOne(
+        { email: req.params.email },
+        { $set: { password: hashdedpass } }
+      );
+    res.json({
+      message: "Sucessfully updated the password",
+    });
+  } else {
+    res.json({
+      message: "Account not activated or Email is not registered",
+    });
+  }
+});
 
 var port = process.env.PORT || 3000;
 app.listen(port);
