@@ -9,29 +9,7 @@ require("dotenv").config();
 const nodemailer = require("nodemailer");
 const eventtrigger = require("events");
 var eveentemitter = new eventtrigger();
-eveentemitter.on("email-trigger", (req, res) => {
-  var transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: "vijay.ganeshp95@gmail.com",
-      pass: process.env.MAILPASS,
-    },
-  });
-  var mailoptions = {
-    from: `vijay.ganeshp95@gmail.com`,
-    to: `vijay.ganeshp95@gmail.com`,
-    subject: `Secret Mail from nodejs`,
-    html: `<div>Please click the below link to activate your account.This link will be valid for 24hrs only
-            <a href="http://127.0.0.1:5500/auth.html">http://localhost:3000/users/auth/</a></div>`,
-  };
-  transporter.sendMail(mailoptions, (err, info) => {
-    if (err) {
-      console.log(err);
-    } else {
-      console.log("email sent" + info.response);
-    }
-  });
-});
+
 
 eveentemitter.on("ResetPasswordemail-trigger", (req, res) => {
   var transporter = nodemailer.createTransport({
@@ -169,6 +147,30 @@ app.post("/users/register", async (req, res) => {
     req.body.activated = false;
     var insertres = await db.collection("registeredusers").insertOne(req.body);
     var token = jwt.sign({ email: req.body.email }, process.env.JWT_SECRET);
+    eveentemitter.on("email-trigger", (req, res) => {
+      var transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: "vijay.ganeshp95@gmail.com",
+          pass: process.env.MAILPASS,
+        },
+      });
+      var mailoptions = {
+        from: `vijay.ganeshp95@gmail.com`,
+        to: `vijay.ganeshp95@gmail.com`,
+        subject: `Secret Mail from nodejs`,
+        html: `<div>Please click the below link to activate your account.This link will be valid for 24hrs only
+                <a href="https://urlshortner-backend-assignment.herokuapp.com/users/auth/${req.body.email}">https://urlshortner-backend-assignment.herokuapp.com/users/auth/</a></div>`,
+      };
+      transporter.sendMail(mailoptions, (err, info) => {
+        if (err) {
+          console.log(err);
+        } else {
+          console.log("email sent" + info.response);
+        }
+      });
+    });
+
 
     eveentemitter.emit("email-trigger");
 
