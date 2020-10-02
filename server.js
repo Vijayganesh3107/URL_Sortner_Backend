@@ -57,7 +57,21 @@ eveentemitter.on("ResetPasswordemail-trigger", (req, res) => {
   });
 });
 
-app.use(cors());
+const corsOpts = {
+  origin: '*',
+
+  methods: [
+    'GET',
+    'POST',
+    'PUT'
+  ],
+
+  allowedHeaders: [
+    'Content-Type',
+  ],
+};
+
+app.use(cors(corsOpts));
 
 const mongodb = require("mongodb");
 const bodyparser = require("body-parser");
