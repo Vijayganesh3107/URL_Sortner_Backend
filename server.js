@@ -155,7 +155,7 @@ app.post("/users/register", async (req, res) => {
 });
 
 //API For Validation using JWT
-app.put("/users/auth/:email", authorize, async (req, res) => {
+app.get("/users/auth/:email", authorize, async (req, res) => {
   var client = await mongoclient.connect(url, { useUnifiedTopology: true });
   var db = client.db("assignment");
   var checkdata = await db
