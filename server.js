@@ -134,7 +134,7 @@ app.post("/users/register", async (req, res) => {
         to: `vijay.ganeshp95@gmail.com`,
         subject: `Secret Mail from nodejs`,
         html: `<div>Please click the below link to activate your account.This link will be valid for 24hrs only
-                <a href="https://urlshortner-backend-assignment.herokuapp.com/users/auth/${e_mail}">http://localhost:3000/users/auth/</a></div>`,
+                <a href="users/auth/${e_mail}">http://localhost:3000/users/auth/</a></div>`,
       };
       transporter.sendMail(mailoptions, (err, info) => {
         if (err) {
@@ -247,7 +247,7 @@ app.post("/user/forgotpassword", async (req, res) => {
   var data = await db
     .collection("registeredusers")
     .findOne({ email: req.body.email });
-  // let e_mail = req.body.email;
+  let e_mail = req.body.email;
 
   if (data && data.activated == true) {
     let passwordtoken = jwt.sign(
@@ -268,7 +268,7 @@ app.post("/user/forgotpassword", async (req, res) => {
         to: `vijay.ganeshp95@gmail.com`,
         subject: `Secret Mail from nodejs`,
         html: `<div>Please click the below link to activate your account.This link will be valid for 24hrs only
-                <a href="https://vijay-urlshortner-backend.herokuapp.com/user/changepassword/${passwordtoken}">https://vijay-urlshortner-backend.herokuapp.com/users/auth/</a></div>`,
+                <a href="https://urlshortner-assignment.netlify.app/passwordauth.html">https://vijay-urlshortner-backend.herokuapp.com/users/auth/</a></div>`,
       };
       transporter.sendMail(mailoptions, (err, info) => {
         if (err) {
@@ -347,69 +347,60 @@ function AuthorizeLogin(req, res, next) {
   }
 }
 
-// app.put("/user/changepassword/:email", async (req, res) => {
-//   var client = await mongoclient.connect(url, { useUnifiedTopology: true });
-//   var db = client.db("assignment");
-//   var data = await db
-//     .collection("registeredusers")
-//     .findOne({ email: req.params.email });
-//   if (data && data.activated == true) {
-//     var salt = await bcrypt.genSalt(10);
-//     var hashdedpass = await bcrypt.hash(req.body.password, salt);
-//     var updateddata = await db
-//       .collection("registeredusers")
-//       .updateOne(
-//         { email: req.params.email },
-//         { $set: { password: hashdedpass } }
-//       );
-//     res.json({
-//       message: "Sucessfully updated the password",
-//     });
-//   } else {
-//     res.json({
-//       message: "Account not activated or Email is not registered",
-//     });
-//   }
-// });
-
-app.put(
-  "/user/changepassword/:token",
-  passwordauthenticate,
-  async (req, res) => {
-    var client = await mongoclient.connect(url, { useUnifiedTopology: true });
-    var db = client.db("assignment");
-    var data = await db
-      .collection("registeredusers")
-      .findOne({ email: req.body.email });
-    if (data && data.activated == true) {
-      var salt = await bcrypt.genSalt(10);
-      var hashdedpass = await bcrypt.hash(req.body.password, salt);
-      var updateddata = await db
-        .collection("registeredusers")
-        .updateOne(
-          { email: req.params.email },
-          { $set: { password: hashdedpass } }
-        );
-      res.json({
-        message: "Sucessfully updated the password",
-      });
-    } else {
-      res.json({
-        message: "Account not activated or Email is not registered",
-      });
-    }
+app.get("/user/changepassword/:email", async (req, res) => {
+  var client = await mongoclient.connect(url, { useUnifiedTopology: true });
+  var db = client.db("assignment");
+  var data = await db
+    .collection("registeredusers")
+    .findOne({ email: req.params.email });
+  if (data && data.activated == true) {
+    res.json({
+      message: "Sucess",
+    });
+  } else {
+    res.json({
+      message: "Account not activated or Email is not registered",
+    });
   }
-);
+});
+
+// app.put(
+//   "/user/changepassword/:token",
+//   passwordauthenticate,
+//   async (req, res) => {
+//     var client = await mongoclient.connect(url, { useUnifiedTopology: true });
+//     var db = client.db("assignment");
+//     var data = await db
+//       .collection("registeredusers")
+//       .findOne({ email: req.body.email });
+//     if (data && data.activated == true) {
+//       var salt = await bcrypt.genSalt(10);
+//       var hashdedpass = await bcrypt.hash(req.body.password, salt);
+//       var updateddata = await db
+//         .collection("registeredusers")
+//         .updateOne(
+//           { email: req.params.email },
+//           { $set: { password: hashdedpass } }
+//         );
+//       res.json({
+//         message: "Sucessfully updated the password",
+//       });
+//     } else {
+//       res.json({
+//         message: "Account not activated or Email is not registered",
+//       });
+//     }
+//   }
+// );
 
 function passwordauthenticate(req, res, next) {
   if (req.headers.authorization) {
-    req.body.email;
     jwt.verify(
       req.headers.authorization,
       process.env.JWT_SECRET,
       (err, decode) => {
         if (decode) {
-          if (req.body.email == decode.email) next();
+          if (req.params.email == decode.email) next();
           else {
             res.json({
               message: "Not Authorized",
