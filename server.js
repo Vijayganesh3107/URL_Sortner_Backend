@@ -220,7 +220,7 @@ app.post("/login", async (req, res) => {
       var loginToken = jwt.sign(
         { email: req.body.email },
         process.env.JWT_SECRET,
-        { expiresIn: 10 }
+        { expiresIn: 300 }
       );
       res.json({
         message: "success",
