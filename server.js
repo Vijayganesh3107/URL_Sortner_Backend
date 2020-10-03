@@ -241,19 +241,26 @@ app.post("/login", async (req, res) => {
 
 //API for forgetpassword
 app.post("/user/forgotpassword", async (req, res) => {
+  console.log("hi");
   var client = await mongoclient.connect(url, { useUnifiedTopology: true });
   var db = client.db("assignment");
   var data = await db
     .collection("registeredusers")
     .findOne({ email: req.body.email });
-  let e_mail = req.body.email;
+  // let e_mail = req.body.email;
+
   if (data && data.activated == true) {
+    let passwordtoken = jwt.sign(
+      { email: req.body.email },
+      process.env.JWT_SECRET,
+      { expiresIn: 300 }
+    );
     eveentemitter.on("forgot-password-mail", (req, res) => {
       var transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
           user: "vijay.ganeshp95@gmail.com",
-          pass: process.env.MAILPASS,
+          pass: `Chennai@7`,
         },
       });
       var mailoptions = {
@@ -261,7 +268,7 @@ app.post("/user/forgotpassword", async (req, res) => {
         to: `vijay.ganeshp95@gmail.com`,
         subject: `Secret Mail from nodejs`,
         html: `<div>Please click the below link to activate your account.This link will be valid for 24hrs only
-                <a href="https://urlshortner-backend-assignment.herokuapp.com/users/changepassword/${e_mail}">http://localhost:3000/users/auth/</a></div>`,
+                <a href="https://vijay-urlshortner-backend.herokuapp.com/user/changepassword/${passwordtoken}">https://vijay-urlshortner-backend.herokuapp.com/users/auth/</a></div>`,
       };
       transporter.sendMail(mailoptions, (err, info) => {
         if (err) {
@@ -277,6 +284,7 @@ app.post("/user/forgotpassword", async (req, res) => {
     res.json({
       message: "User Present",
       email: req.body.email,
+      token: passwordtoken,
     });
   } else {
     client.close();
@@ -339,30 +347,87 @@ function AuthorizeLogin(req, res, next) {
   }
 }
 
-app.put("/user/changepassword/:email", async (req, res) => {
-  var client = await mongoclient.connect(url, { useUnifiedTopology: true });
-  var db = client.db("assignment");
-  var data = await db
-    .collection("registeredusers")
-    .findOne({ email: req.params.email });
-  if (data && data.activated == true) {
-    var salt = await bcrypt.genSalt(10);
-    var hashdedpass = await bcrypt.hash(req.body.password, salt);
-    var updateddata = await db
+// app.put("/user/changepassword/:email", async (req, res) => {
+//   var client = await mongoclient.connect(url, { useUnifiedTopology: true });
+//   var db = client.db("assignment");
+//   var data = await db
+//     .collection("registeredusers")
+//     .findOne({ email: req.params.email });
+//   if (data && data.activated == true) {
+//     var salt = await bcrypt.genSalt(10);
+//     var hashdedpass = await bcrypt.hash(req.body.password, salt);
+//     var updateddata = await db
+//       .collection("registeredusers")
+//       .updateOne(
+//         { email: req.params.email },
+//         { $set: { password: hashdedpass } }
+//       );
+//     res.json({
+//       message: "Sucessfully updated the password",
+//     });
+//   } else {
+//     res.json({
+//       message: "Account not activated or Email is not registered",
+//     });
+//   }
+// });
+
+app.put(
+  "/user/changepassword/:token",
+  passwordauthenticate,
+  async (req, res) => {
+    var client = await mongoclient.connect(url, { useUnifiedTopology: true });
+    var db = client.db("assignment");
+    var data = await db
       .collection("registeredusers")
-      .updateOne(
-        { email: req.params.email },
-        { $set: { password: hashdedpass } }
-      );
-    res.json({
-      message: "Sucessfully updated the password",
-    });
+      .findOne({ email: req.body.email });
+    if (data && data.activated == true) {
+      var salt = await bcrypt.genSalt(10);
+      var hashdedpass = await bcrypt.hash(req.body.password, salt);
+      var updateddata = await db
+        .collection("registeredusers")
+        .updateOne(
+          { email: req.params.email },
+          { $set: { password: hashdedpass } }
+        );
+      res.json({
+        message: "Sucessfully updated the password",
+      });
+    } else {
+      res.json({
+        message: "Account not activated or Email is not registered",
+      });
+    }
+  }
+);
+
+function passwordauthenticate(req, res, next) {
+  if (req.headers.authorization) {
+    req.body.email;
+    jwt.verify(
+      req.headers.authorization,
+      process.env.JWT_SECRET,
+      (err, decode) => {
+        if (decode) {
+          if (req.body.email == decode.email) next();
+          else {
+            res.json({
+              message: "Not Authorized",
+            });
+          }
+        } else {
+          res.json({
+            message: "Session Expired Please Login Again",
+          });
+        }
+      }
+    );
   } else {
     res.json({
-      message: "Account not activated or Email is not registered",
+      message: "Token not present",
     });
   }
-});
+}
 
 var port = process.env.PORT || 3000;
 app.listen(port);
