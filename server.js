@@ -7,8 +7,8 @@ require("dotenv").config();
 
 //Events and node mailer for sending the mail
 const nodemailer = require("nodemailer");
-const eventtrigger = require("events");
-var eveentemitter = new eventtrigger();
+// const eventtrigger = require("events");
+// var eveentemitter = new eventtrigger();
 
 app.use(cors());
 
@@ -20,6 +20,7 @@ const url = process.env.DB_ATLAS;
 const shortid = require("shortid"); /*For generating the unique short id*/
 const { json } = require("body-parser");
 const { count } = require("console");
+const { env } = require("process");
 
 app.get("/", (req, res) => {
   res.send("Hello World");
@@ -121,31 +122,30 @@ app.post("/users/register", async (req, res) => {
     var insertres = await db.collection("registeredusers").insertOne(req.body);
     var token = jwt.sign({ email: req.body.email }, process.env.JWT_SECRET);
     let e_mail = req.body.email;
-    eveentemitter.on("email-trigger", (req, res) => {
-      var transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-          user: "vijay.ganeshp95@gmail.com",
-          pass: process.env.MAILPASS,
-        },
-      });
-      var mailoptions = {
-        from: `vijay.ganeshp95@gmail.com`,
-        to: `${e_mail}`,
-        subject: `Secret Mail from nodejs`,
-        html: `<div>Please click the below link to activate your account.This link will be valid for 24hrs only
+    // eveentemitter.on("email-trigger", (req, res) => {
+    var transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: "vijay.ganeshp95@gmail.com",
+        pass: process.env.MAILPASS,
+      },
+    });
+    var mailoptions = {
+      from: `vijay.ganeshp95@gmail.com`,
+      to: `${e_mail}`,
+      subject: `Secret Mail from nodejs`,
+      html: `<div>Please click the below link to activate your account.This link will be valid for 24hrs only
                 <a href="https://urlshortner-assignment.netlify.app/auth.html">http://localhost:3000/users/auth/</a></div>`,
-      };
-      transporter.sendMail(mailoptions, (err, info) => {
-        if (err) {
-          console.log(err);
-        } else {
-          console.log("email sent" + info.response);
-        }
-      });
+    };
+    transporter.sendMail(mailoptions, (err, info) => {
+      if (err) {
+        console.log(err);
+      } else {
+        console.log("email sent" + info.response);
+      }
     });
 
-    eveentemitter.emit("email-trigger");
+    // eveentemitter.emit("email-trigger");
     client.close();
     res.json({
       message: `User registered and a mail has been sent to ${req.body.email} and activate the account`,
@@ -220,7 +220,7 @@ app.post("/login", async (req, res) => {
       var loginToken = jwt.sign(
         { email: req.body.email },
         process.env.JWT_SECRET,
-        { expiresIn: 300 }
+        { expiresIn: 10 }
       );
       res.json({
         message: "success",
@@ -255,31 +255,30 @@ app.post("/user/forgotpassword", async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: 300 }
     );
-    eveentemitter.on("forgot-password-mail", (req, res) => {
-      var transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-          user: "vijay.ganeshp95@gmail.com",
-          pass: `Chennai@7`,
-        },
-      });
-      var mailoptions = {
-        from: `vijay.ganeshp95@gmail.com`,
-        to: `${e_mail}`,
-        subject: `Secret Mail from nodejs`,
-        html: `<div>Please click the below link toChange password of your account.
+    // eveentemitter.on("forgot-password-mail", (req, res) => {
+    var transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: "vijay.ganeshp95@gmail.com",
+        pass: `vIjay@31071995`,
+      },
+    });
+    var mailoptions = {
+      from: `vijay.ganeshp95@gmail.com`,
+      to: `${e_mail}`,
+      subject: `Secret Mail from nodejs`,
+      html: `<div>Please click the below link toChange password of your account.
                 <a href="https://urlshortner-assignment.netlify.app/passwordauth.html">forget</a></div>`,
-      };
-      transporter.sendMail(mailoptions, (err, info) => {
-        if (err) {
-          console.log(err);
-        } else {
-          console.log("email sent" + info.response);
-        }
-      });
+    };
+    transporter.sendMail(mailoptions, (err, info) => {
+      if (err) {
+        console.log(err);
+      } else {
+        console.log("email sent" + info.response);
+      }
     });
 
-    eveentemitter.emit("forgot-password-mail");
+    // eveentemitter.emit("forgot-password-mail");
     client.close();
     res.json({
       message: "User Present",
