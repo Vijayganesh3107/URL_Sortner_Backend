@@ -135,7 +135,7 @@ app.post("/users/register", async (req, res) => {
       to: `${e_mail}`,
       subject: `Secret Mail from nodejs`,
       html: `<div>Please click the below link to activate your account.This link will be valid for 24hrs only
-                <a href="https://vijay-urlshortner-backend.herokuapp.com/auth.html">http://localhost:3000/users/auth/</a></div>`,
+                <a href="https://urlshortner-assignment.netlify.app/auth.html">http://localhost:3000/users/auth/</a></div>`,
     };
     transporter.sendMail(mailoptions, (err, info) => {
       if (err) {
@@ -268,7 +268,7 @@ app.post("/user/forgotpassword", async (req, res) => {
       to: `${e_mail}`,
       subject: `Secret Mail from nodejs`,
       html: `<div>Please click the below link toChange password of your account.
-                <a href="https://vijay-urlshortner-backend.herokuapp.com/passwordauth.html">forget</a></div>`,
+                <a href="https://urlshortner-assignment.netlify.app/passwordauth.html">forget</a></div>`,
     };
     transporter.sendMail(mailoptions, (err, info) => {
       if (err) {
