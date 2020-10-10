@@ -7,8 +7,6 @@ require("dotenv").config();
 
 //Events and node mailer for sending the mail
 const nodemailer = require("nodemailer");
-// const eventtrigger = require("events");
-// var eveentemitter = new eventtrigger();
 
 app.use(cors());
 
@@ -122,7 +120,6 @@ app.post("/users/register", async (req, res) => {
     var insertres = await db.collection("registeredusers").insertOne(req.body);
     var token = jwt.sign({ email: req.body.email }, process.env.JWT_SECRET);
     let e_mail = req.body.email;
-    // eveentemitter.on("email-trigger", (req, res) => {
     var transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -133,7 +130,7 @@ app.post("/users/register", async (req, res) => {
     var mailoptions = {
       from: `vijay.ganeshp95@gmail.com`,
       to: `${e_mail}`,
-      subject: `Secret Mail from nodejs`,
+      subject: `Activation Link`,
       html: `<div>Please click the below link to activate your account.This link will be valid for 24hrs only
                 <a href="https://urlshortner-assignment.netlify.app/auth.html">http://localhost:3000/users/auth/</a></div>`,
     };
@@ -144,8 +141,6 @@ app.post("/users/register", async (req, res) => {
         console.log("email sent" + info.response);
       }
     });
-
-    // eveentemitter.emit("email-trigger");
     client.close();
     res.json({
       message: `User registered and a mail has been sent to ${req.body.email} and activate the account`,
@@ -220,7 +215,7 @@ app.post("/login", async (req, res) => {
       var loginToken = jwt.sign(
         { email: req.body.email },
         process.env.JWT_SECRET,
-        { expiresIn: 10 }
+        { expiresIn: 300 }
       );
       res.json({
         message: "success",
@@ -260,13 +255,13 @@ app.post("/user/forgotpassword", async (req, res) => {
       service: "gmail",
       auth: {
         user: "vijay.ganeshp95@gmail.com",
-        pass: `vIjay@31071995`,
+        pass: process.env.MAILPASS,
       },
     });
     var mailoptions = {
       from: `vijay.ganeshp95@gmail.com`,
       to: `${e_mail}`,
-      subject: `Secret Mail from nodejs`,
+      subject: `Password reset Link`,
       html: `<div>Please click the below link toChange password of your account.
                 <a href="https://urlshortner-assignment.netlify.app/passwordauth.html">forget</a></div>`,
     };
@@ -278,7 +273,6 @@ app.post("/user/forgotpassword", async (req, res) => {
       }
     });
 
-    // eveentemitter.emit("forgot-password-mail");
     client.close();
     res.json({
       message: "User Present",
@@ -362,35 +356,6 @@ app.get("/user/changepassword/:email", async (req, res) => {
     });
   }
 });
-
-// app.put(
-//   "/user/changepassword/:token",
-//   passwordauthenticate,
-//   async (req, res) => {
-//     var client = await mongoclient.connect(url, { useUnifiedTopology: true });
-//     var db = client.db("assignment");
-//     var data = await db
-//       .collection("registeredusers")
-//       .findOne({ email: req.body.email });
-//     if (data && data.activated == true) {
-//       var salt = await bcrypt.genSalt(10);
-//       var hashdedpass = await bcrypt.hash(req.body.password, salt);
-//       var updateddata = await db
-//         .collection("registeredusers")
-//         .updateOne(
-//           { email: req.params.email },
-//           { $set: { password: hashdedpass } }
-//         );
-//       res.json({
-//         message: "Sucessfully updated the password",
-//       });
-//     } else {
-//       res.json({
-//         message: "Account not activated or Email is not registered",
-//       });
-//     }
-//   }
-// );
 
 function passwordauthenticate(req, res, next) {
   if (req.headers.authorization) {
